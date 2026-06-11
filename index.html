@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Marveen — az AI-flotta · műhely</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --voros:#A6192E; --cian:#00A3E0; --fekete:#1C1B1A; --papir:#FAF7F2;
+    --grafit:#B5B0A8; --vonal:rgba(250,247,242,.16);
+    --fdisp:'Fraunces',Georgia,serif; --fsans:'Inter',system-ui,sans-serif; --fmono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:var(--fekete);color:var(--papir);font-family:var(--fsans);-webkit-font-smoothing:antialiased}
+  .deck{position:fixed;inset:0}
+  .slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(28px,5vw,80px);visibility:hidden;opacity:0}
+  .slide.active{visibility:visible;opacity:1}
+  .inner{width:min(1180px,100%);}
+
+  .eyebrow{font:600 .8rem/1 var(--fmono);letter-spacing:.22em;text-transform:uppercase;color:var(--voros)}
+  .eyebrow.agent{color:var(--cian)}
+  .eyebrow .n{opacity:.6}
+  h1{font:700 clamp(2.6rem,7vw,5.2rem)/1.02 var(--fdisp);letter-spacing:-.015em}
+  h2{font:600 clamp(2rem,4.6vw,3.4rem)/1.05 var(--fdisp);letter-spacing:-.01em}
+  .cap{font:400 clamp(1rem,1.7vw,1.4rem)/1.5 var(--fsans);color:#D8D3CB;max-width:60ch}
+  .accent{color:var(--voros)} .accent-c{color:var(--cian)}
+
+  /* CMYK control strip */
+  .strip{display:flex;height:9px;width:230px}
+  .strip span{flex:1}
+
+  /* title slide */
+  .title-slide .inner{text-align:left}
+  .title-slide .lede{margin-top:26px;font:400 clamp(1.05rem,2vw,1.5rem)/1.5 var(--fsans);color:var(--grafit);max-width:46ch}
+  .title-slide .strip{margin-top:40px}
+  .logo-row{display:flex;align-items:center;gap:16px;margin-bottom:30px}
+  .gmark{width:64px;height:64px;border-radius:14px;background:#000;display:grid;place-items:center;font:700 38px/1 var(--fdisp);color:#fff;position:relative;box-shadow:inset 0 0 0 2px #2b2a28}
+  .gmark::after{content:"";position:absolute;right:12px;bottom:14px;width:11px;height:11px;background:var(--cian)}
+
+  /* section divider */
+  .divider .inner{text-align:center}
+  .divider .eyebrow{display:block;margin-bottom:18px}
+  .divider .strip{margin:34px auto 0}
+
+  /* landscape video slide */
+  .vid-slide .inner{display:grid;grid-template-columns:1fr;gap:30px;justify-items:center;text-align:center}
+  .vid-head{display:flex;flex-direction:column;gap:14px;align-items:center}
+  .vframe{width:min(960px,82vw);max-height:60vh;aspect-ratio:16/9;border:1px solid var(--vonal);background:#000;box-shadow:0 30px 70px rgba(0,0,0,.55);overflow:hidden}
+  .vframe video{width:100%;height:100%;object-fit:cover;display:block}
+
+  /* phone scene slide */
+  .phone-slide .inner{display:grid;grid-template-columns:auto 1fr;gap:clamp(30px,5vw,70px);align-items:center}
+  .phone{position:relative;width:clamp(232px,26vw,300px);flex:none;background:#0a0a0a;border-radius:40px;padding:11px;box-shadow:0 36px 80px rgba(0,0,0,.6),inset 0 0 0 2px #26251f, 0 0 0 1px #000;justify-self:center}
+  .phone .screen{position:relative;width:100%;aspect-ratio:9/16;border-radius:30px;overflow:hidden;background:#000}
+  .phone .screen video{width:100%;height:100%;object-fit:cover;display:block}
+  .phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:40%;height:20px;background:#0a0a0a;border-radius:0 0 13px 13px;z-index:3}
+  .scene-copy{max-width:46ch}
+  .scene-copy .eyebrow{margin-bottom:16px;display:block}
+  .scene-copy h2{margin-bottom:16px}
+  .scene-tag{display:inline-flex;align-items:center;gap:9px;margin-top:22px;font:600 .78rem/1 var(--fmono);letter-spacing:.12em;text-transform:uppercase;color:var(--cian);border:1px solid var(--vonal);padding:9px 14px}
+  .scene-tag::before{content:"";width:7px;height:7px;background:var(--cian);border-radius:50%}
+
+  /* chrome */
+  .hud{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;gap:18px;padding:16px clamp(20px,4vw,46px)}
+  .progress{flex:1;height:2px;background:var(--vonal);position:relative}
+  .progress .bar{position:absolute;left:0;top:0;height:100%;background:var(--voros);width:0;transition:width .4s ease}
+  .counter{font:600 .8rem/1 var(--fmono);letter-spacing:.1em;color:var(--grafit)}
+  .navbtns{position:fixed;bottom:14px;right:clamp(20px,4vw,46px);z-index:41;display:flex;gap:8px}
+  .navbtns button{width:40px;height:40px;border:1px solid var(--vonal);background:rgba(250,247,242,.04);color:var(--papir);font-size:18px;cursor:pointer;display:grid;place-items:center;transition:background .15s,border-color .15s}
+  .navbtns button:hover{background:var(--voros);border-color:var(--voros)}
+  .brandtag{position:fixed;top:clamp(18px,3vw,34px);right:clamp(20px,4vw,46px);z-index:41;font:600 .72rem/1 var(--fmono);letter-spacing:.18em;text-transform:uppercase;color:var(--grafit)}
+  .hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);z-index:41;font:500 .72rem/1 var(--fmono);letter-spacing:.1em;color:#6e6962;text-transform:uppercase;transition:opacity .5s}
+  @media(max-width:760px){
+    .phone-slide .inner{grid-template-columns:1fr;gap:24px;text-align:center}
+    .scene-copy{justify-self:center}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 0 · TITLE -->
+  <section class="slide title-slide active">
+    <div class="inner">
+      <div class="logo-row">
+        <div class="gmark">M</div>
+        <div class="eyebrow agent">Claude&nbsp;Code · AI-flotta</div>
+      </div>
+      <h1>Marveen<br>egy <span class="accent">AI-flotta</span>, ami dolgozik.</h1>
+      <p class="lede">Specializált AI-ügynökök, akik emlékeznek, tanulnak, egymásnak delegálnak — és éjjel-nappal viszik a melót.</p>
+      <div class="strip"><span style="background:#00A3E0"></span><span style="background:#E10098"></span><span style="background:#FFD500"></span><span style="background:#1C1B1A;outline:1px solid var(--vonal);outline-offset:-1px"></span><span style="background:#A6192E"></span></div>
+    </div>
+  </section>
+
+  <!-- DIVIDER · 01 -->
+  <section class="slide divider">
+    <div class="inner">
+      <span class="eyebrow"><span class="n">01 — </span>A rendszer</span>
+      <h2>Mi a flotta, és miből áll?</h2>
+      <div class="strip"><span style="background:#00A3E0"></span><span style="background:#E10098"></span><span style="background:#FFD500"></span><span style="background:#1C1B1A;outline:1px solid var(--vonal);outline-offset:-1px"></span><span style="background:#A6192E"></span></div>
+    </div>
+  </section>
+
+  <!-- csapat -->
+  <section class="slide vid-slide" data-v="vid/csapat.mp4">
+    <div class="inner">
+      <div class="vid-head">
+        <span class="eyebrow">A csapat</span>
+        <h2>Specializált ügynökök, egy csapat</h2>
+        <p class="cap">Marveen a karmester (PM), Samu fejleszt, Zara a marketing, Iris a videó — mindenki a saját szakterületén.</p>
+      </div>
+      <div class="vframe"><video muted loop playsinline preload="auto" src="vid/csapat.mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- memoria -->
+  <section class="slide vid-slide" data-v="vid/memoria.mp4">
+    <div class="inner">
+      <div class="vid-head">
+        <span class="eyebrow">Memória</span>
+        <h2>Perzisztens emlékezet</h2>
+        <p class="cap">Hot / warm / cold rétegek és napi napló — a flotta nem felejt két beszélgetés között.</p>
+      </div>
+      <div class="vframe"><video muted loop playsinline preload="auto" src="vid/memoria.mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- skillfactory -->
+  <section class="slide vid-slide" data-v="vid/skillfactory.mp4">
+    <div class="inner">
+      <div class="vid-head">
+        <span class="eyebrow">Skill-factory</span>
+        <h2>Önfejlesztés menet közben</h2>
+        <p class="cap">Egy nehéz feladat után az ügynök új, újrahasznosítható készséget ment magának — legközelebb már tudja.</p>
+      </div>
+      <div class="vframe"><video muted loop playsinline preload="auto" src="vid/skillfactory.mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- autonomy -->
+  <section class="slide vid-slide" data-v="vid/autonomy.mp4">
+    <div class="inner">
+      <div class="vid-head">
+        <span class="eyebrow">Autonómia-szintek</span>
+        <h2>Te állítod, mennyit dönthet</h2>
+        <p class="cap"><span class="accent-c">1</span> — jelez · <span class="accent-c">2</span> — javasol · <span class="accent-c">3</span> — autonóm. Kategóriánként szabályozható kontroll.</p>
+      </div>
+      <div class="vframe"><video muted loop playsinline preload="auto" src="vid/autonomy.mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- heartbeat -->
+  <section class="slide vid-slide" data-v="vid/heartbeat.mp4">
+    <div class="inner">
+      <div class="vid-head">
+        <span class="eyebrow">Heartbeat</span>
+        <h2>Óránkénti öntudat</h2>
+        <p class="cap">A flotta magától figyel: naptár, feladatok, rendszer — és proaktívan szól, ha kell. Nem várja meg, hogy kérdezz.</p>
+      </div>
+      <div class="vframe"><video muted loop playsinline preload="auto" src="vid/heartbeat.mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- DIVIDER · 02 -->
+  <section class="slide divider">
+    <div class="inner">
+      <span class="eyebrow agent"><span class="n">02 — </span>Inter-agent</span>
+      <h2>Az ügynökök egymással beszélnek</h2>
+      <div class="strip"><span style="background:#00A3E0"></span><span style="background:#E10098"></span><span style="background:#FFD500"></span><span style="background:#1C1B1A;outline:1px solid var(--vonal);outline-offset:-1px"></span><span style="background:#A6192E"></span></div>
+    </div>
+  </section>
+
+  <!-- komm -->
+  <section class="slide vid-slide" data-v="vid/komm.mp4">
+    <div class="inner">
+      <div class="vid-head">
+        <span class="eyebrow agent">Inter-agent kommunikáció</span>
+        <h2>Delegálás emberi kéz nélkül</h2>
+        <p class="cap">Marveen átadja a feladatot Samunak, Samu visszajelez — a flotta magában koordinál, te csak az eredményt látod.</p>
+      </div>
+      <div class="vframe"><video muted loop playsinline preload="auto" src="vid/komm.mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- DIVIDER · 03 -->
+  <section class="slide divider">
+    <div class="inner">
+      <span class="eyebrow"><span class="n">03 — </span>A mai műhely</span>
+      <h2>Négy éles jelenet, élőben</h2>
+      <div class="strip"><span style="background:#00A3E0"></span><span style="background:#E10098"></span><span style="background:#FFD500"></span><span style="background:#1C1B1A;outline:1px solid var(--vonal);outline-offset:-1px"></span><span style="background:#A6192E"></span></div>
+    </div>
+  </section>
+
+  <!-- SCENE 1 · pénzügy -->
+  <section class="slide phone-slide" data-swim="1" data-v="vid/scene1.mp4">
+    <div class="inner">
+      <div class="phone"><span class="notch"></span><div class="screen"><video muted loop playsinline preload="auto" src="vid/scene1.mp4"></video></div></div>
+      <div class="scene-copy">
+        <span class="eyebrow agent">Jelenet 01</span>
+        <h2>Pénzügy <span class="accent-c">0–24</span></h2>
+        <p class="cap">Számlák, tranzakciók, riasztások — a flotta éjjel-nappal figyeli és intézi a pénzügyeket.</p>
+        <span class="scene-tag">Mindig éber</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCENE 2 · HR -->
+  <section class="slide phone-slide" data-swim="1" data-v="vid/scene2.mp4">
+    <div class="inner">
+      <div class="phone"><span class="notch"></span><div class="screen"><video muted loop playsinline preload="auto" src="vid/scene2.mp4"></video></div></div>
+      <div class="scene-copy">
+        <span class="eyebrow agent">Jelenet 02</span>
+        <h2>HR: hirdetés + landing <span class="accent-c">percek alatt</span></h2>
+        <p class="cap">Álláshirdetés szövegtől az élő, márkázott jelentkezési oldalig — egy kérésből, néhány perc alatt.</p>
+        <span class="scene-tag">Ötlettől élő oldalig</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCENE 3 · CV-szűrés -->
+  <section class="slide phone-slide" data-swim="1" data-v="vid/scene3.mp4">
+    <div class="inner">
+      <div class="phone"><span class="notch"></span><div class="screen"><video muted loop playsinline preload="auto" src="vid/scene3.mp4"></video></div></div>
+      <div class="scene-copy">
+        <span class="eyebrow agent">Jelenet 03</span>
+        <h2>CV-szűrés <span class="accent-c">automatikusan</span></h2>
+        <p class="cap">A beérkező önéletrajzokat a flotta átnézi, rangsorolja és összefoglalja — te a rövidlistát kapod.</p>
+        <span class="scene-tag">Emberi döntés, gépi előszűrés</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCENE 4a · ügyfélszolgálat e-mail -->
+  <section class="slide phone-slide" data-swim="1" data-v="vid/scene4a.mp4">
+    <div class="inner">
+      <div class="phone"><span class="notch"></span><div class="screen"><video muted loop playsinline preload="auto" src="vid/scene4a.mp4"></video></div></div>
+      <div class="scene-copy">
+        <span class="eyebrow agent">Jelenet 04 · A</span>
+        <h2>Ügyfélszolgálat — <span class="accent-c">e-mail</span></h2>
+        <p class="cap">Bejövő levelek kategorizálása, válaszok megfogalmazása — a flotta kezeli a postaládát.</p>
+        <span class="scene-tag">Beérkező → válasz</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCENE 4b · ügyfélszolgálat telegram -->
+  <section class="slide phone-slide" data-swim="1" data-v="vid/scene4b.mp4">
+    <div class="inner">
+      <div class="phone"><span class="notch"></span><div class="screen"><video muted loop playsinline preload="auto" src="vid/scene4b.mp4"></video></div></div>
+      <div class="scene-copy">
+        <span class="eyebrow agent">Jelenet 04 · B</span>
+        <h2>Ügyfélszolgálat — <span class="accent-c">Telegram</span></h2>
+        <p class="cap">Azonnali chat-támogatás: a flotta ott válaszol, ahol az ügyfél ír — valós időben.</p>
+        <span class="scene-tag">Valós idejű chat</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="slide title-slide">
+    <div class="inner">
+      <div class="logo-row"><div class="gmark">M</div><div class="eyebrow agent">Marveen</div></div>
+      <h1>Egy csapat,<br>ami <span class="accent">sosem alszik.</span></h1>
+      <p class="lede">Memória · skill-factory · autonómia · inter-agent koordináció — és négy éles jelenet, amit ma láttál.</p>
+      <div class="strip"><span style="background:#00A3E0"></span><span style="background:#E10098"></span><span style="background:#FFD500"></span><span style="background:#1C1B1A;outline:1px solid var(--vonal);outline-offset:-1px"></span><span style="background:#A6192E"></span></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="brandtag">Marveen · műhely</div>
+<div class="hint" id="hint">← →&nbsp;&nbsp;a lépdeléshez</div>
+<div class="hud">
+  <div class="counter" id="counter">01</div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="counter" id="total">/ 00</div>
+</div>
+<div class="navbtns">
+  <button id="prev" aria-label="Előző">‹</button>
+  <button id="next" aria-label="Következő">›</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const N = slides.length;
+  let cur = 0, busy = false, pending = null;
+  document.getElementById('total').textContent = '/ ' + String(N).padStart(2,'0');
+
+  function pad(n){ return String(n+1).padStart(2,'0'); }
+  function playOnly(slide){
+    slides.forEach(s=>{ const v=s.querySelector('video'); if(v && s!==slide){ try{v.pause();}catch(e){} } });
+    const v = slide.querySelector('video');
+    if(v){ try{ v.currentTime=0; const p=v.play(); if(p&&p.catch)p.catch(()=>{}); }catch(e){} }
+  }
+  function animIn(slide, dir){
+    const inner = slide.querySelector('.inner');
+    const phone = slide.querySelector('.phone');
+    const copy = slide.querySelector('.scene-copy');
+    if(phone){
+      gsap.fromTo(phone,{x:240*dir,y:34,rotate:7*dir,scale:.82,autoAlpha:0},{x:0,y:0,rotate:0,scale:1,autoAlpha:1,duration:.8,ease:'power3.out'});
+      if(copy) gsap.fromTo(copy.children,{autoAlpha:0,x:40*dir},{autoAlpha:1,x:0,duration:.6,stagger:.08,delay:.18,ease:'power2.out'});
+    } else {
+      const kids = inner.children;
+      gsap.fromTo(kids,{autoAlpha:0,y:34},{autoAlpha:1,y:0,duration:.6,stagger:.1,ease:'power2.out'});
+    }
+  }
+  function go(i, dir){
+    if(busy || i<0 || i>=N || i===cur) return;
+    busy = true;
+    const old = slides[cur], next = slides[i];
+    const oldInner = old.querySelector('.inner');
+    const oldPhone = old.querySelector('.phone');
+    const outTarget = oldPhone || oldInner;
+    gsap.to(outTarget,{autoAlpha:0,x:oldPhone?(-240*dir):0,y:oldPhone?0:-24,duration:.32,ease:'power1.in',onComplete:()=>{
+      old.classList.remove('active');
+      gsap.set(outTarget,{clearProps:'all'});
+      next.classList.add('active');
+      gsap.set(next.querySelector('.inner'),{clearProps:'all'});
+      playOnly(next);
+      animIn(next, dir);
+      cur = i;
+      document.getElementById('counter').textContent = pad(cur);
+      document.getElementById('bar').style.width = ((cur)/(N-1)*100)+'%';
+      busy = false;
+      if(pending){ const d = pending; pending = null; step(d); }
+    }});
+  }
+  function step(dir){
+    const t = cur + dir;
+    if(t<0 || t>=N) return;
+    if(busy){ pending = dir; return; }   // queue one intent so fast clicks aren't lost
+    go(t, dir);
+  }
+  function nextS(){ step(1); }
+  function prevS(){ step(-1); }
+
+  document.getElementById('next').onclick = nextS;
+  document.getElementById('prev').onclick = prevS;
+  window.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); nextS(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); prevS(); }
+    else if(e.key==='Home'){ go(0, -1); }
+    else if(e.key==='End'){ go(N-1, 1); }
+  });
+  // click zones (left third = prev, rest = next), ignore the nav buttons
+  document.getElementById('deck').addEventListener('click', e=>{
+    if(e.target.closest('.navbtns')) return;
+    if(e.clientX < window.innerWidth*0.30) prevS(); else nextS();
+  });
+  // hide hint after first move
+  let hintGone=false;
+  function killHint(){ if(!hintGone){ hintGone=true; gsap.to('#hint',{autoAlpha:0,duration:.5}); } }
+  ['keydown','click'].forEach(ev=>window.addEventListener(ev, killHint, {once:false}));
+
+  // init
+  document.getElementById('bar').style.width='0%';
+  playOnly(slides[0]);
+  gsap.fromTo(slides[0].querySelector('.inner').children,{autoAlpha:0,y:34},{autoAlpha:1,y:0,duration:.7,stagger:.12,ease:'power2.out',delay:.15});
+</script>
+</body>
+</html>
