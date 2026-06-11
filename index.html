@@ -281,6 +281,7 @@
   <div class="counter" id="total">/ 00</div>
 </div>
 <div class="navbtns">
+  <button id="fs" aria-label="Teljes képernyő" title="Teljes képernyő (F · Esc)">⛶</button>
   <button id="prev" aria-label="Előző">‹</button>
   <button id="next" aria-label="Következő">›</button>
 </div>
@@ -341,11 +342,30 @@
 
   document.getElementById('next').onclick = nextS;
   document.getElementById('prev').onclick = prevS;
+
+  // Fullscreen toggle (whole document, so the HUD + nav stay visible — they are
+  // siblings of #deck, so fullscreening only #deck would hide the controls).
+  const fsBtn = document.getElementById('fs');
+  const fsEl = document.documentElement;
+  function inFS(){ return document.fullscreenElement || document.webkitFullscreenElement; }
+  function toggleFS(){
+    try{
+      if(!inFS()){ (fsEl.requestFullscreen||fsEl.webkitRequestFullscreen).call(fsEl); }
+      else { (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+    }catch(e){}
+  }
+  fsBtn.onclick = (e)=>{ e.stopPropagation(); toggleFS(); };
+  ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev, ()=>{
+    fsBtn.textContent = inFS() ? '⤡' : '⛶';
+    fsBtn.title = inFS() ? 'Kilépés (Esc)' : 'Teljes képernyő (F · Esc)';
+  }));
+
   window.addEventListener('keydown', e=>{
     if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); nextS(); }
     else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); prevS(); }
     else if(e.key==='Home'){ go(0, -1); }
     else if(e.key==='End'){ go(N-1, 1); }
+    else if(e.key==='f'||e.key==='F'){ e.preventDefault(); toggleFS(); }
   });
   // click zones (left third = prev, rest = next), ignore the nav buttons
   document.getElementById('deck').addEventListener('click', e=>{
